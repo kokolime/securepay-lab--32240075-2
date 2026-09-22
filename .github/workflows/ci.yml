@@ -31,6 +31,21 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  secret-scan:
+    name: Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Install Gitleaks (versi di-pin + verifikasi checksum)
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Scan secret di source code
+        run: gitleaks dir . --redact --verbose
+
   # >>> TAHAP A: tambahkan job secret-scan di bawah ini
   # >>> TAHAP B: tambahkan job dependency-scan
   # >>> TAHAP C: tambahkan job sast
