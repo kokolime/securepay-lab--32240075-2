@@ -1,0 +1,71 @@
+# Aturan SAST untuk praktikum TIG13 (dijalankan lokal, tanpa perlu akun/internet).
+# Di dunia nyata Anda biasanya memakai rule pack resmi, mis. --config p/javascript
+rules:
+  - id: lab-sql-injection-string-building
+    languages: [javascript]
+    severity: ERROR
+    message: >
+      Query SQL disusun dengan string concatenation / template literal.
+      Gunakan parameterized query (prepared statement) agar input tidak diperlakukan sebagai SQL.
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A03:2021 - Injection"
+    pattern-either:
+      - pattern: $DB.exec(`...${$X}...`)
+      - pattern: $DB.exec($A + $B)
+      - pattern: $DB.prepare(`...${$X}...`)
+      - pattern: $DB.prepare($A + $B)
+      - pattern: all($DB, `...${$X}...`)
+      - pattern: all($DB, $A + $B)
+
+  - id: lab-reflected-xss
+    languages: [javascript]
+    severity: ERROR
+    message: >
+      Input dari request masuk langsung ke response HTML tanpa di-escape (XSS).
+      Lakukan output encoding / escape HTML sebelum menampilkan input pengguna.
+    metadata:
+      category: security
+      cwe: "CWE-79: Cross-site Scripting"
+      owasp: "A03:2021 - Injection"
+    mode: taint
+    pattern-sources:
+      - pattern: req.query
+      - pattern: req.body
+      - pattern: req.params
+    pattern-sinks:
+      - pattern: res.send(...)
+    pattern-sanitizers:
+      - pattern: escapeHtml(...)
+
+  - id: lab-weak-hash-algorithm
+    languages: [javascript]
+    severity: ERROR
+    message: >
+      MD5/SHA-1 tidak layak untuk menyimpan password (cepat di-brute force, tanpa salt).
+      Gunakan algoritma khusus password: scrypt, bcrypt, atau argon2.
+    metadata:
+      category: security
+      cwe: "CWE-328: Use of Weak Hash"
+      owasp: "A02:2021 - Cryptographic Failures"
+    pattern-either:
+      - pattern: crypto.createHash("md5")
+      - pattern: crypto.createHash("sha1")
+
+  - id: lab-error-stack-leak
+    languages: [javascript]
+    severity: WARNING
+    message: >
+      Detail error (stack trace) dikirim ke pengguna. Catat di log server,
+      dan kirim pesan error yang generik ke klien.
+    metadata:
+      category: security
+      cwe: "CWE-209: Information Exposure Through an Error Message"
+      owasp: "A05:2021 - Security Misconfiguration"
+    pattern-either:
+      - pattern: $RES.send(`...${$ERR.stack}...`)
+      - pattern: $RES.send($ERR.stack)
+      - pattern: $RES.status(...).send($ERR.stack)
+      - pattern: |
+          $RES.json({..., error: $ERR.stack, ...})

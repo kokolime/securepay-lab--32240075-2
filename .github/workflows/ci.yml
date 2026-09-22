@@ -1,0 +1,32 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+  pull_request:
+
+# Prinsip least privilege: workflow hanya boleh membaca isi repo
+permissions:
+  contents: read
+
+jobs:
+  # ------------------------------------------------------------
+  # CI dasar: install -> unit test.  (sudah HIJAU dari awal)
+  # Tugas Anda: menambahkan security check ke pipeline ini.
+  # ------------------------------------------------------------
+  build-test:
+    name: Build & Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      # Action di-pin ke commit SHA (bukan tag) agar tidak bisa diganti diam-diam
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  # >>> TAHAP A: tambahkan job secret-scan di bawah ini
+  # >>> TAHAP B: tambahkan job dependency-scan
+  # >>> TAHAP C: tambahkan job sast
+  # >>> TAHAP D: tambahkan job deploy (security gate)
