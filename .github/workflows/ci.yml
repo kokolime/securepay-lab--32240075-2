@@ -59,4 +59,16 @@ jobs:
       # Gagal jika ada vulnerability tingkat HIGH atau CRITICAL
       - run: npm audit --audit-level=high
   # >>> TAHAP C: tambahkan job sast
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Install Semgrep
+        run: |
+          python3 -m venv "$RUNNER_TEMP/semgrep-venv"
+          "$RUNNER_TEMP/semgrep-venv/bin/pip" install --quiet "semgrep==${SEMGREP_VERSION}"
+          echo "$RUNNER_TEMP/semgrep-venv/bin" >> "$GITHUB_PATH"
+      - name: Jalankan SAST
+        run: semgrep scan --config .semgrep/ --metrics=off --disable-version-check --error src 
   # >>> TAHAP D: tambahkan job deploy (security gate)
