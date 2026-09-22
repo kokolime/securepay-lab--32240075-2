@@ -72,3 +72,10 @@ jobs:
       - name: Jalankan SAST
         run: semgrep scan --config .semgrep/ --metrics=off --disable-version-check --error src 
   # >>> TAHAP D: tambahkan job deploy (security gate)
+  deploy:
+    name: Deploy ke Staging (simulasi)
+    needs: [build-test, secret-scan, dependency-scan, sast]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Semua security gate lolos. Deploy ke staging (simulasi)."
