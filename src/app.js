@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const helmet = require('helmet'); // Import Helmet
 const config = require('./config');
 const { createDb, verifyPassword, allBound } = require('./db');
 
@@ -17,6 +18,41 @@ function escapeHtml(str) {
 
 async function createApp() {
   const app = express();
+
+  // 1. Matikan header X-Powered-By secara eksplisit
+  app.disable('x-powered-by');
+
+  // 2. Gunakan Helmet untuk mengatur Security Headers dasar
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'"],
+          imgSrc: ["'self'"],
+          defaultStyleDirective: ["'self'"],
+        },
+      },
+      crossOriginResourcePolicy: { policy: 'same-origin' },
+      noSniff: true,
+    })
+  );
+
+  // 3. Tambahkan header Permissions-Policy
+  app.use((req, res, next) => {
+    res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+    next();
+  });
+
+  // 4. Atur Cache-Control agar konten tidak disimpan sembarangan di cache
+  app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+
   const db = await createDb();
   let settings = _.cloneDeep(config.defaultSettings);
 
@@ -34,7 +70,7 @@ async function createApp() {
     }
   }
 
-  // --- TAMBAHKAN ROUTE AKAR UNTUK DAST SCAN / CODESPACES DI SINI ---
+  // Rute Akar (Mencegah 404 / Cannot GET / pada ZAP Scan & Codespaces)
   app.get('/', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'SecurePay Lab API is running' });
   });
@@ -149,14 +185,12 @@ async function createApp() {
     res.json(rows[0]);
   });
 
-  // Ubah pengaturan aplikasi (Diperbaiki: Mencegah Prototype Pollution)
+  // Ubah pengaturan aplikasi (Mencegah Prototype Pollution)
   app.post('/api/settings', requireAuth, (req, res) => {
-    // Hanya izinkan pengguna dengan role 'admin' mengubah settings
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Akses ditolak: Membutuhkan role admin' });
     }
 
-    // Hindari deep merge langsung dari req.body untuk cegah Prototype Pollution
     const allowedKeys = ['theme', 'notifications', 'language', 'maintenanceMode'];
     const updateData = {};
 
