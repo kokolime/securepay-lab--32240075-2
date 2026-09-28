@@ -34,6 +34,11 @@ async function createApp() {
     }
   }
 
+  // --- TAMBAHKAN ROUTE AKAR UNTUK DAST SCAN / CODESPACES DI SINI ---
+  app.get('/', (req, res) => {
+    res.status(200).json({ status: 'ok', message: 'SecurePay Lab API is running' });
+  });
+
   // Health check
   app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
