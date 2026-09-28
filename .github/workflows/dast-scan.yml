@@ -1,1 +1,36 @@
+name: DAST Security Scan
 
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  dast_scan:
+    runs-on: ubuntu-latest
+    name: Run DAST Scan with OWASP ZAP
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Langkah 1: Jalankan aplikasi Anda terlebih dahulu
+      # Sesuaikan perintah ini sesuai teknologi aplikasi Anda (Node.js, Python, Docker, dll)
+      - name: Start Application
+        run: |
+          npm install
+          npm start &
+          # Beri waktu beberapa detik agar server/aplikasi siap menerima koneksi
+          sleep 10 
+
+      # Langkah 2: Jalankan OWASP ZAP DAST Scan
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          # Ganti URL ini sesuai port/address aplikasi lokal yang berjalan di runner GitHub
+          target: 'http://localhost:3000'
+          # Mengubah status pipeline jadi gagal jika ada kerentanan kritikal
+          fail_action: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue_title: 'DAST Security Alert: Issue Found'
