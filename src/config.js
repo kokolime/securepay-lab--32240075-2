@@ -8,10 +8,10 @@ module.exports = {
   port: process.env.PORT || 3000,
 
   // Secret untuk menandatangani JWT (Diambil dari environment variable)
-  jwtSecret: 'default_jwt_secret_for_local_dev',
+  jwtSecret: process.env.JWT_SECRET || 'default_jwt_secret_for_local_dev',
 
   // API key payment gateway (Diambil dari environment variable)
-  paymentGatewayApiKey:'asashdhashdha',
+  paymentGatewayApiKey:process.env.PAYMENT_GATEWAY_API_KEY,
 
   // Pengaturan default aplikasi
   defaultSettings: {
