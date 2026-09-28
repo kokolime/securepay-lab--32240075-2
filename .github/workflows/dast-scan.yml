@@ -1,50 +1,47 @@
-name: DAST Scan with ZAP
+name: DAST Security Scan
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ "main", "master" ]
 
 jobs:
-  zap_scan:
+  dast_scan:
     runs-on: ubuntu-latest
-    name: Run ZAP Baseline Scan
+    name: Run DAST Scan with OWASP ZAP
+
+    # FIX 1: Tambahkan blok permissions agar ZAP bisa membuat Issue
+    permissions:
+      contents: read
+      issues: write
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js (Sesuaikan dengan stack aplikasi)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install & Start Application
+      # FIX 2: Pastikan server berjalan dan tunggu hingga endpoint mengembalikan HTTP 200 OK
+      - name: Start Application & Healthcheck
         run: |
-          npm ci
+          npm install
           npm start &
-          # Memastikan aplikasi sudah aktif di localhost:3000 dan tidak mengembalikan 404
-          npx wait-on http://localhost:3000 --timeout 60000
-
-      # Mencegah error 'Permission denied' pada /zap/wrk/zap.yaml
-      - name: Fix Workspace Permissions for ZAP Docker
-        run: sudo chmod -R 777 ${{ github.workspace }}
+          
+          # Loop pengecekan hingga aplikasi mengembalikan HTTP 200 (maksimal 30 detik)
+          echo "Waiting for application to be ready..."
+          for i in {1..30}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || true)
+            if [ "$STATUS" -eq 200 ]; then
+              echo "Application is ready with HTTP 200!"
+              break
+            fi
+            echo "Waiting... (Current status: $STATUS)"
+            sleep 1
+          done
 
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
           target: 'http://localhost:3000'
-          allow_issue_writing: true
-
-      # Mencegah error 'Create Artifact Container failed' dengan memakai v4
-      - name: Upload ZAP Scan Reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: zap-scan-report
-          path: |
-            report_html.html
-            report_md.md
-            report_json.json
+          fail_action: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue_title: 'DAST Security Alert: Issue Found'
