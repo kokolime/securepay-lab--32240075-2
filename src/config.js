@@ -11,7 +11,7 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET || 'default_jwt_secret_for_local_dev',
 
   // API key payment gateway (Diambil dari environment variable)
-  paymentGatewayApiKey: process.env.PAYMENT_GATEWAY_API_KEY || '',
+  paymentGatewayApiKey: 'asashdhashdha',
 
   // Pengaturan default aplikasi
   defaultSettings: {
