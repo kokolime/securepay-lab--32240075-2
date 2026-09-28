@@ -11,26 +11,37 @@ jobs:
     runs-on: ubuntu-latest
     name: Run DAST Scan with OWASP ZAP
 
+    # FIX 1: Tambahkan blok permissions agar ZAP bisa membuat Issue
+    permissions:
+      contents: read
+      issues: write
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Langkah 1: Jalankan aplikasi Anda terlebih dahulu
-      # Sesuaikan perintah ini sesuai teknologi aplikasi Anda (Node.js, Python, Docker, dll)
-      - name: Start Application
+      # FIX 2: Pastikan server berjalan dan tunggu hingga endpoint mengembalikan HTTP 200 OK
+      - name: Start Application & Healthcheck
         run: |
           npm install
           npm start &
-          # Beri waktu beberapa detik agar server/aplikasi siap menerima koneksi
-          sleep 10 
+          
+          # Loop pengecekan hingga aplikasi mengembalikan HTTP 200 (maksimal 30 detik)
+          echo "Waiting for application to be ready..."
+          for i in {1..30}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || true)
+            if [ "$STATUS" -eq 200 ]; then
+              echo "Application is ready with HTTP 200!"
+              break
+            fi
+            echo "Waiting... (Current status: $STATUS)"
+            sleep 1
+          done
 
-      # Langkah 2: Jalankan OWASP ZAP DAST Scan
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          # Ganti URL ini sesuai port/address aplikasi lokal yang berjalan di runner GitHub
           target: 'http://localhost:3000'
-          # Mengubah status pipeline jadi gagal jika ada kerentanan kritikal
           fail_action: false
           token: ${{ secrets.GITHUB_TOKEN }}
           issue_title: 'DAST Security Alert: Issue Found'
