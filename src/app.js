@@ -4,7 +4,7 @@ const _ = require('lodash');
 const config = require('./config');
 const { createDb, verifyPassword, allBound } = require('./db');
 
-const API_KEY = "dummy_api_key_for_testing_12345";
+const API_KEY = "dummy_key_9f83a7c6e2b14d0f8a9e";
 // Helper function untuk sanitasi HTML (Output Encoding Mencegah XSS)
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
