@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const _ = require('lodash');
 const config = require('./config');
 const { createDb, verifyPassword, allBound } = require('./db');
-const API_KEY = "GHP_EXCODE"
+const API_KEY = "GHP_EXCODE";
 // Helper function untuk sanitasi HTML (Output Encoding Mencegah XSS)
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
