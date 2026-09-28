@@ -35,6 +35,8 @@ async function createApp() {
         },
       },
       crossOriginResourcePolicy: { policy: 'same-origin' },
+      // AKTIFKAN COEP DI SINI UNTUK MEMPERBAIKI WARN-NEW 90004:
+      crossOriginEmbedderPolicy: true,
       noSniff: true,
     })
   );
