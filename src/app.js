@@ -184,7 +184,26 @@ async function createApp() {
 
     res.json(rows[0]);
   });
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send("User-agent: *\nDisallow: /");
+  });
 
+  app.get('/sitemap.xml', (req, res) => {
+    res.type('application/xml');
+    res.send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  });
+
+  // --- WILDCARD 404 HANDLER (Memastikan status 404 tetap membawa Security Headers) ---
+  app.use((req, res) => {
+    res.status(404).json({ error: 'Endpoint tidak ditemukan' });
+  });
+
+  // Penanganan error internal (500)
+  app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).json({ error: 'Terjadi kesalahan internal pada server' });
+  });
   // Ubah pengaturan aplikasi (Mencegah Prototype Pollution)
   app.post('/api/settings', requireAuth, (req, res) => {
     if (req.user.role !== 'admin') {
